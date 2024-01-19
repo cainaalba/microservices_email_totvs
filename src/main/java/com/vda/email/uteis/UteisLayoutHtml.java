@@ -2,31 +2,22 @@ package com.vda.email.uteis;
 
 import com.vda.email.dto.DadosRps;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class UteisLayoutHtml {
-    private static final String pathRaiz = "C:/Totvs/Protheus_Data/";
-    private static final String pathLayouts = "/workflow/";
-
     public static String montaHtmlNfse(DadosRps dadosRps) throws IOException {
-        String nomeLayoutMailRps = "vcknfse.htm";
-
-        String htmlContent = lerArquivoHtml("src/main/resources/layouts/vcknfse.htm");
+        String htmlContent = lerArquivoHtml();
         return personalizarLayoutNfse(htmlContent, dadosRps);
     }
 
-    private static String lerArquivoHtml(String path) throws IOException {
-        StringBuilder stringBuilder = new StringBuilder();
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                stringBuilder.append(line).append("/n");
-            }
-        }
-        return stringBuilder.toString();
+    private static String lerArquivoHtml() throws IOException {
+        Path path = Paths.get("src/main/resources/layouts/vcknfse.htm");
+        byte[] fileBytes = Files.readAllBytes(path);
+        return new String(fileBytes, StandardCharsets.ISO_8859_1);
     }
 
     private static String personalizarLayoutNfse(String htmlContent, DadosRps dadosRps) {

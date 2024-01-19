@@ -1,7 +1,10 @@
 package com.vda.email.service;
 
 import com.vda.email.dto.DadosEmail;
-import com.vda.email.uteis.EnviaEmail;
+import com.vda.email.component.EnviaEmail;
+import com.vda.email.repo.SF2Repo;
+import com.vda.email.repo.SPED051Repo;
+import com.vda.email.uteis.Uteis;
 import com.vda.email.uteis.UteisLayoutHtml;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,47 +18,45 @@ public class EnviaEmailService {
     @Autowired
     private final EnviaEmail enviaEmail;
 
-    private final String pathRaiz = "C:/Totvs/Protheus_Data/";
-    private final String pathArquivosNfse = "/xmlnfse/";
+    @Autowired
+    private final SF2Repo repoSf2;
 
-    public EnviaEmailService(EnviaEmail enviaEmail) {
+    @Autowired
+    private final SPED051Repo repoSped051;
+
+    public EnviaEmailService(EnviaEmail enviaEmail,
+                             SF2Repo repoSf2,
+                             SPED051Repo repoSped051) {
         this.enviaEmail = enviaEmail;
+        this.repoSf2 = repoSf2;
+        this.repoSped051 = repoSped051;
     }
 
     public ResponseEntity<?> enviar(DadosEmail dados) throws Exception {
         String html = UteisLayoutHtml.montaHtmlNfse(dados.getDadosRps());
-
-        enviaEmail.setDadosEmail(dados.getDadosRps());
-        enviaEmail.adicionaAnexo(dados.getAnexos());
-        enviaEmail.setAssunto(dados.getAssunto());
-        enviaEmail.setPara(dados.getPara());
-        enviaEmail.setCorpoEmail(html);
-        enviaEmail.send();
+        enviaEmail.send(dados, html);
 
         //deleta arquivos XML e PDF após envio.
         for (String anexo : dados.getAnexos()) {
-            new File(pathRaiz + pathArquivosNfse + anexo).delete();
+            new File(Uteis.pathRaiz + Uteis.pathArquivosNfse + anexo).delete();
         }
 
-        //ATUALIZAR DADOS DA SF2 E SPED, SE SUCESSO
-//        PUT SF2;
-//        PUT SPED12;
+        //PUT F2_ZENVRPS;
+        atualizarSf2(dados.getRecnoF2(), dados.getUsuario(), dados.getPara());
 
-        /*If SF2->(DbSeek(xFilial("SF2") + cRps + cSerie)) .and. !lCanc
-					RecLock("SF2",.F.)
-					SF2->F2_ZENVRPS := "S"
-					SF2->F2_ZDTMAIL := cValToChar(date()) + " " + substr(time(),1,5) + "-" + Alltrim(UsrRetName(__CUSERID)) + " | " + Alltrim(cMailCli) //ADD 23/01/23
-					SF2->(MsUnLock())
-				endif
-
-				// Seta status do e-mail como Enviado
-				cUpd := "UPDATE "+ cStrSpd +".dbo.SPED051 "
-				cUpd += "   SET STATUSMAIL = '2', "
-				cUpd += "       EMAIL = '"+ cMailCli +"' "
-				cUpd += " WHERE ID_ENT = '" + cIDEnt + "'"
-				cUpd += "   AND NFSE_ID = '" + Padr(cSerie,TamSX3("F2_SERIE")[1]) + cRps + "'"
-				TCSqlExec(cUpd)*/
+        //PUT SPED12;
+        atualizarSped051(dados.getRecno051(), dados.getPara());
 
         return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    private void atualizarSf2(String recno, String nomeUsuario, String[] para) {
+        var doc = repoSf2.getReferenceById(recno);
+        doc.atualizaStatusMail(recno, nomeUsuario, para);
+    }
+
+    private void atualizarSped051(String recno, String[] para) {
+        var doc = repoSped051.getReferenceById(recno);
+        doc.atualizaStatusMail(para);
     }
 }

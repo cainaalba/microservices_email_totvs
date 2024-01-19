@@ -32,8 +32,8 @@ public class ConfigEmailService {
                 "       WF7_SMTPSE METODO " +
                 "FROM WF7010\n" +
                 "WHERE 1 = 1\n" +
-                "AND D_E_L_E_T_ = ''\n" +
-                "AND WF7_FILIAL = SUBSTRING('" + filial + "',0,5)\n" +
+                "  AND D_E_L_E_T_ = ''\n" +
+                "  AND WF7_FILIAL = SUBSTRING('" + filial + "',0,5)\n" +
                 "GROUP BY WF7_FILIAL,\n" +
                 "       WF7_ENDERE,\n" +
                 "       WF7_SMTPSR,\n" +
@@ -45,6 +45,7 @@ public class ConfigEmailService {
         return executar(query);
     }
 
+    @SuppressWarnings({"unchecked", "deprecation"})
     public List<Map<String, Object>> executar(String query) {
         Query qry = eManager.createNativeQuery(query);
         NativeQueryImpl<Map<String, Object>> nativeQuery = (NativeQueryImpl<Map<String, Object>>) qry;

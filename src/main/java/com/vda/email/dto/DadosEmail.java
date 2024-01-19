@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigInteger;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,4 +20,6 @@ public class DadosEmail {
     private String cco;
     private String usuario;
     private String[] anexos;
+    private String recnoF2;
+    private String recno051;
 }

@@ -2,6 +2,7 @@ package com.vda.email.controller;
 
 import com.vda.email.dto.DadosEmail;
 import com.vda.email.service.EnviaEmailService;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ public class EnviaEmailController {
     }
 
     @PostMapping
+    @Transactional
     public ResponseEntity<?> enviar(@RequestBody DadosEmail dados) throws Exception {
             return service.enviar(dados);
     }
