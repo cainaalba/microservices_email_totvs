@@ -6,15 +6,20 @@ import org.hibernate.query.sql.internal.NativeQueryImpl;
 import org.hibernate.transform.AliasToEntityMapResultTransformer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 
-@Component
+@Service
 public class ConfigEmailService {
 
     @Autowired
-    private EntityManager eManager;
+    private final EntityManager eManager;
+
+    public ConfigEmailService(EntityManager eManager) {
+        this.eManager = eManager;
+    }
 
     public List<Map<String, Object>> buscaConfigEmail(String filial) {
         String query = "SELECT WF7_FILIAL FILIAL,\n" +

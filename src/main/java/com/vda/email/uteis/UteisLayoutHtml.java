@@ -11,9 +11,9 @@ public class UteisLayoutHtml {
     private static final String pathLayouts = "/workflow/";
 
     public static String montaHtmlNfse(DadosRps dadosRps) throws IOException {
-        String nomeLayoutMailRps = "vckcancnfse.htm";
+        String nomeLayoutMailRps = "vcknfse.htm";
 
-        String htmlContent = lerArquivoHtml(pathRaiz + pathLayouts + nomeLayoutMailRps);
+        String htmlContent = lerArquivoHtml("src/main/resources/layouts/vcknfse.htm");
         return personalizarLayoutNfse(htmlContent, dadosRps);
     }
 

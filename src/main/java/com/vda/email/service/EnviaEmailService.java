@@ -2,8 +2,8 @@ package com.vda.email.service;
 
 import com.vda.email.dto.DadosEmail;
 import com.vda.email.uteis.EnviaEmail;
-import com.vda.email.uteis.Uteis;
 import com.vda.email.uteis.UteisLayoutHtml;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,14 +12,22 @@ import java.io.File;
 
 @Service
 public class EnviaEmailService {
+    @Autowired
+    private final EnviaEmail enviaEmail;
+
     private final String pathRaiz = "C:/Totvs/Protheus_Data/";
     private final String pathArquivosNfse = "/xmlnfse/";
+
+    public EnviaEmailService(EnviaEmail enviaEmail) {
+        this.enviaEmail = enviaEmail;
+    }
 
     public ResponseEntity<?> enviar(DadosEmail dados) throws Exception {
         String html = UteisLayoutHtml.montaHtmlNfse(dados.getDadosRps());
 
-        EnviaEmail enviaEmail = new EnviaEmail(dados.getDadosRps());
+        enviaEmail.setDadosEmail(dados.getDadosRps());
         enviaEmail.adicionaAnexo(dados.getAnexos());
+        enviaEmail.setAssunto(dados.getAssunto());
         enviaEmail.setPara(dados.getPara());
         enviaEmail.setCorpoEmail(html);
         enviaEmail.send();

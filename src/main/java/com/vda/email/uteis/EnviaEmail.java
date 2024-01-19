@@ -4,29 +4,29 @@ import com.vda.email.dto.DadosRps;
 import com.vda.email.service.ConfigEmailService;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.security.core.parameters.P;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.activation.CommandMap;
-import javax.activation.DataHandler;
-import javax.activation.DataSource;
-import javax.activation.FileDataSource;
-import javax.activation.MailcapCommandMap;
+import javax.activation.*;
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import javax.management.RuntimeMBeanException;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
-@SuppressWarnings("SpellCheckingInspection")
+@Service
 @Getter
 @Setter
+@SuppressWarnings("SpellCheckingInspection")
 public class EnviaEmail extends javax.mail.Authenticator {
+    @Autowired
+    private final ConfigEmailService configEmailService;
+
     private String filial = "";
     private String usuario = "";
     private String senha = "";
@@ -44,10 +44,14 @@ public class EnviaEmail extends javax.mail.Authenticator {
     private boolean isDebug = false;
     private MimeMultipart multipart = new MimeMultipart();
 
-    public EnviaEmail(DadosRps dadosRps) {
+    public EnviaEmail(ConfigEmailService configEmailService) {
+        this.configEmailService = configEmailService;
+    }
+
+    public void setDadosEmail(DadosRps dadosRps) {
         setFilial(dadosRps.filial());
 
-        List<Map<String, Object>> list = new ConfigEmailService().buscaConfigEmail(dadosRps.filial());
+        List<Map<String, Object>> list = configEmailService.buscaConfigEmail(dadosRps.filial());
         if (!list.isEmpty()) {
             for (Map<String, Object> stringObjectMap : list) {
                 setServidor(stringObjectMap.get("SERVIDOR").toString().trim());

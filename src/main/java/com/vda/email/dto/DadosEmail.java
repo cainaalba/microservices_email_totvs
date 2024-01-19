@@ -10,12 +10,12 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DadosEmail {
-    DadosRps dadosRps;
-    String entidade;
-    String assunto;
-    String[] para;
-    String cc;
-    String cco;
-    String[] anexos;
-    String usuario;
+    private DadosRps dadosRps;
+    private String entidade;
+    private String assunto;
+    private String[] para;
+    private String cc;
+    private String cco;
+    private String usuario;
+    private String[] anexos;
 }
