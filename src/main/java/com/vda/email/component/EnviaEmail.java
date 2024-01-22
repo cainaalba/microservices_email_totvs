@@ -6,6 +6,8 @@ import com.vda.email.service.ConfigEmailService;
 import com.vda.email.uteis.Uteis;
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +28,8 @@ import java.util.*;
 public class EnviaEmail extends javax.mail.Authenticator {
     @Autowired
     private final ConfigEmailService configEmailService;
+
+    Logger logger = LoggerFactory.getLogger(EnviaEmail.class);
 
     private String filial = "";
     private String usuario = "";
@@ -48,21 +52,20 @@ public class EnviaEmail extends javax.mail.Authenticator {
     }
 
     public void setDadosEmail(DadosRps dadosRps) {
+        logger.info("{} {} / {} | Dados requisicao: {}", dadosRps.filial(), dadosRps.rps(), dadosRps.serie(), dadosRps);
+
         setFilial(dadosRps.filial());
 
         List<Map<String, Object>> list = configEmailService.buscaConfigEmail(dadosRps.filial());
         if (!list.isEmpty()) {
             for (Map<String, Object> stringObjectMap : list) {
                 setServidor(stringObjectMap.get("SERVIDOR").toString().trim());
-                setUsaSSL(getFilial().contains("1101") ||
-                        stringObjectMap.get("METODO").toString().trim().equals("TLS"));
+                setUsaSSL(getFilial().contains("1101")
+                        || stringObjectMap.get("METODO").toString().trim().equals("TLS"));
 
                 setPorta(stringObjectMap.get("PORTA").toString().trim().replace(".0", ""));
-                if ((getServidor().toLowerCase().contains("gmail") ||
-                        getServidor().toLowerCase().contains("lauxen")
-//                        getServidor().toLowerCase().contains("office365") ||
-//                        getServidor().toLowerCase().contains("ost")
-                )
+                if ((getServidor().toLowerCase().contains("gmail")
+                        || getServidor().toLowerCase().contains("lauxen"))
                         && isUsaSSL()) {
                     setPorta("465");
                 }
@@ -72,7 +75,10 @@ public class EnviaEmail extends javax.mail.Authenticator {
                 setSenha(stringObjectMap.get("SENHA").toString().trim());
                 setAutentica(stringObjectMap.get("METODO").toString().trim().equals("TLS"));
             }
+
+            logger.info("{} {} / {} | Config. Email: {}", dadosRps.filial(), dadosRps.rps(), dadosRps.serie(), Arrays.toString(list.toArray()));
         } else {
+            logger.error("{} {} / {} | Configuração do servidor de e-mails não localizadas.", dadosRps.filial(), dadosRps.rps(), dadosRps.serie());
             throw new RuntimeException("Configuração do servidor de e-mails não localizadas.");
         }
     }
@@ -82,6 +88,11 @@ public class EnviaEmail extends javax.mail.Authenticator {
         setAssunto(dados.getAssunto());
         setPara(dados.getPara());
         setCorpoEmail(html);
+
+        logger.info("{} {} / {} | Assunto: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getAssunto());
+        logger.info("{} {} / {} | Para: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getPara());
+        logger.info("{} {} / {} | Anexos: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getAnexos());
+        logger.info("{} {} / {} | Usuario: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getUsuario());
 
         if (!getUsuario().isEmpty()
                 && !getSenha().isEmpty()
@@ -136,6 +147,7 @@ public class EnviaEmail extends javax.mail.Authenticator {
             }
 
             if (messageBodyFiles == null) {
+                logger.error("{} {} / {} | Nenhum anexo encontrado para enviar!", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie());
                 throw new IOException("Nenhum anexo encontrado para enviar!");
             }
 
@@ -155,8 +167,10 @@ public class EnviaEmail extends javax.mail.Authenticator {
 
             multipart.removeBodyPart(messageBodyPart);
             multipart.removeBodyPart(messageBodyFiles);
+
+            logger.info("{} {} / {} | Envio finalizado com sucesso!", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie());
         } else {
-            throw new RuntimeException();
+            throw new RuntimeException("Usuário, senha, remetente ou assunto inválidos. Tente novamente!");
         }
     }
 
