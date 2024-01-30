@@ -92,7 +92,7 @@ public class EnviaEmail extends javax.mail.Authenticator {
         logger.info("{} {} / {} | Assunto: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getAssunto());
         logger.info("{} {} / {} | Para: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getPara());
         logger.info("{} {} / {} | Anexos: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getAnexos());
-        logger.info("{} {} / {} | Usuario: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getUsuario());
+//        logger.info("{} {} / {} | Usuario: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getUsuario());
 
         if (!getUsuario().isEmpty()
                 && !getSenha().isEmpty()

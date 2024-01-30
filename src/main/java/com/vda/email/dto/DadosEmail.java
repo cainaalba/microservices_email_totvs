@@ -18,7 +18,7 @@ public class DadosEmail {
     private String[] para;
     private String cc;
     private String cco;
-    private String usuario;
+//    private String usuario;
     private String[] anexos;
     private String recnoF2;
     private String recno051;

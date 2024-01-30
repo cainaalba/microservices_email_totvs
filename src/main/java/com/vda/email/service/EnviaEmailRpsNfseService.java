@@ -48,7 +48,7 @@ public class EnviaEmailRpsNfseService {
         }
 
         //PUT F2_ZENVRPS;
-        atualizarSf2(dados.getRecnoF2(), dados.getUsuario(), dados.getPara());
+        atualizarSf2(dados.getRecnoF2(), dados.getPara());
 
         //PUT SPED12;
         atualizarSped051(dados.getRecno051(), dados.getPara());
@@ -56,9 +56,9 @@ public class EnviaEmailRpsNfseService {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    private void atualizarSf2(String recno, String nomeUsuario, String[] para) {
+    private void atualizarSf2(String recno, String[] para) {
         var doc = repoSf2.getReferenceById(recno);
-        doc.atualizaStatusMail(recno, nomeUsuario, para);
+        doc.atualizaStatusMail(recno, "JOB Email", para);
     }
 
     private void atualizarSped051(String recno, String[] para) {
