@@ -41,12 +41,6 @@ public class EnviaEmailRpsNfseService {
             throw new RuntimeException(e);
         }
 
-        //deleta arquivos XML e PDF após envio.
-        for (String anexo : dados.getAnexos()) {
-            new File(Uteis.pathRaiz + Uteis.pathArquivosNfse + anexo).delete();
-            new File(Uteis.pathRaiz + Uteis.pathArquivosNfse + anexo.toLowerCase().replace("pdf","rel")).delete();
-        }
-
         //PUT F2_ZENVRPS;
         atualizarSf2(dados.getRecnoF2(), dados.getPara());
 
