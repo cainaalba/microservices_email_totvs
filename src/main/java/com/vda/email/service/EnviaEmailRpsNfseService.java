@@ -32,7 +32,6 @@ public class EnviaEmailRpsNfseService {
         this.repoSped051 = repoSped051;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public ResponseEntity<?> enviarRpsNfse(DadosEmail dados) {
         try {
             String html = UteisLayoutHtml.montaHtmlNfse(dados.getDadosRps());
@@ -41,11 +40,13 @@ public class EnviaEmailRpsNfseService {
             throw new RuntimeException(e);
         }
 
-        //PUT F2_ZENVRPS;
-        atualizarSf2(dados.getRecnoF2(), dados.getPara());
+        if (!dados.getDadosRps().isCanc()) {
+            //PUT F2_ZENVRPS;
+            atualizarSf2(dados.getRecnoF2(), dados.getPara());
 
-        //PUT SPED12;
-        atualizarSped051(dados.getRecno051(), dados.getPara());
+            //PUT SPED12;
+            atualizarSped051(dados.getRecno051(), dados.getPara());
+        }
 
         return ResponseEntity.status(HttpStatus.OK).build();
     }
