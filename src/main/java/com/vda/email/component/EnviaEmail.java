@@ -1,5 +1,7 @@
 package com.vda.email.component;
 
+import com.sun.mail.smtp.SMTPAddressFailedException;
+import com.sun.mail.smtp.SMTPSendFailedException;
 import com.vda.email.dto.DadosEmail;
 import com.vda.email.dto.DadosRps;
 import com.vda.email.service.ConfigEmailService;
@@ -113,12 +115,6 @@ public class EnviaEmail extends javax.mail.Authenticator {
             MimeMessage message = new MimeMessage(session);
             message.setFrom(new InternetAddress(getRemetente()));
 
-            Address[] addressTo = new InternetAddress[getPara().length];
-            for (int i = 0; i < getPara().length; i++) {
-                addressTo[i] = new InternetAddress(getPara()[i]);
-            }
-            message.setRecipients(MimeMessage.RecipientType.TO, addressTo);
-
             //se tem que enviar cópia oculta para alguém
             if (getComCopia() != null && getComCopia().length > 0) {
                 Address[] addressCco = new InternetAddress[getComCopia().length];
@@ -163,7 +159,23 @@ public class EnviaEmail extends javax.mail.Authenticator {
 
             message.setContent(multipart);
             session.getTransport("smtp");
-            Transport.send(message);
+
+            //TRATA DO ENVIO PARA CADA DESTINATÁRIO EXCLUSIVAMENTE
+            Address[] addressTo = new InternetAddress[1];
+            for (int i = 0; i < getPara().length; i++) {
+                addressTo[0] = new InternetAddress(getPara()[i]);
+                message.setRecipients(MimeMessage.RecipientType.TO, addressTo);
+                try {
+                    Transport.send(message);
+                } catch (SendFailedException e) {
+                    Address[] invalidAddressTo = e.getValidUnsentAddresses();
+                    StringBuilder stringBuilder = new StringBuilder();
+                    for (Address invalid : invalidAddressTo) {
+                        stringBuilder.append(invalid.toString()).append("; ");
+                    }
+                    logger.error("Endereço de e-mail ou domínio inválido: {} - {}", stringBuilder, e.getNextException().toString());
+                }
+            }
 
             multipart.removeBodyPart(messageBodyPart);
             multipart.removeBodyPart(messageBodyFiles);
