@@ -7,5 +7,5 @@ public class Uteis {
 
 //    public static final String pathRaiz = "src/main/resources";
 //    public static final String pathArquivosNfse = "/xmlnfse/";
-//    public static final String pathLayouts = "src/main/resources/layouts/";
+//    public static final String pathLayouts = "/layouts/";
 }

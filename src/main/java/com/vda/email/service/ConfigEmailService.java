@@ -1,10 +1,16 @@
 package com.vda.email.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vda.email.model.ContasEmailMapper;
+import com.vda.email.model.ContasEmailModel;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.hibernate.query.sql.internal.NativeQueryImpl;
 import org.hibernate.transform.AliasToEntityMapResultTransformer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
@@ -15,13 +21,13 @@ import java.util.Map;
 public class ConfigEmailService {
 
     @Autowired
-    private final EntityManager eManager;
+    private final JdbcTemplate jdbcTemplate;
 
-    public ConfigEmailService(EntityManager eManager) {
-        this.eManager = eManager;
+    public ConfigEmailService(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<Map<String, Object>> buscaConfigEmail(String filial) {
+    public ContasEmailModel buscaConfigEmail(String filial) {
         String query = "SELECT LTRIM(RTRIM(WF7_FILIAL)) FILIAL,\n" +
                 "              LTRIM(RTRIM(WF7_ENDERE)) ENDERECO,\n" +
                 "              LTRIM(RTRIM(WF7_SMTPSR)) SERVIDOR,\n" +
@@ -45,11 +51,13 @@ public class ConfigEmailService {
         return executar(query);
     }
 
-    @SuppressWarnings({"unchecked", "deprecation"})
-    public List<Map<String, Object>> executar(String query) {
-        Query qry = eManager.createNativeQuery(query);
-        NativeQueryImpl<Map<String, Object>> nativeQuery = (NativeQueryImpl<Map<String, Object>>) qry;
-        nativeQuery.setResultTransformer(AliasToEntityMapResultTransformer.INSTANCE);
-        return nativeQuery.getResultList();
+    private ContasEmailModel executar(String query) {
+        var result = jdbcTemplate.query(query, new ContasEmailMapper());
+        try {
+            JsonNode jsonNode = new ObjectMapper().valueToTree(result);
+            return new ObjectMapper().readValue(jsonNode.get(0).toString(), ContasEmailModel.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

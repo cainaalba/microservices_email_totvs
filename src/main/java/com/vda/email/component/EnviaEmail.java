@@ -1,9 +1,8 @@
 package com.vda.email.component;
 
-import com.sun.mail.smtp.SMTPAddressFailedException;
-import com.sun.mail.smtp.SMTPSendFailedException;
 import com.vda.email.dto.DadosEmail;
 import com.vda.email.dto.DadosRps;
+import com.vda.email.model.ContasEmailModel;
 import com.vda.email.service.ConfigEmailService;
 import com.vda.email.uteis.Uteis;
 import lombok.Getter;
@@ -21,7 +20,9 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Date;
+import java.util.Objects;
+import java.util.Properties;
 
 @Service
 @Getter
@@ -58,27 +59,24 @@ public class EnviaEmail extends javax.mail.Authenticator {
 
         setFilial(dadosRps.filial());
 
-        List<Map<String, Object>> list = configEmailService.buscaConfigEmail(dadosRps.filial());
-        if (!list.isEmpty()) {
-            for (Map<String, Object> stringObjectMap : list) {
-                setServidor(stringObjectMap.get("SERVIDOR").toString().trim());
-                setUsaSSL(getFilial().contains("1101")
-                        || stringObjectMap.get("METODO").toString().trim().equals("TLS"));
+        ContasEmailModel model = configEmailService.buscaConfigEmail(dadosRps.filial());
+        if (!model.getUsuario().isEmpty()) {
+            setServidor(model.getServidor().trim());
+            setUsaSSL(getFilial().contains("1101")
+                    || model.getMetodo().trim().equals("TLS"));
 
-                setPorta(stringObjectMap.get("PORTA").toString().trim().replace(".0", ""));
-                if ((getServidor().toLowerCase().contains("gmail")
-                        || getServidor().toLowerCase().contains("lauxen"))
-                        && isUsaSSL()) {
-                    setPorta("465");
-                }
-                setPortaSegura(getPorta());
-                setRemetente(stringObjectMap.get("USUARIO").toString().trim());
-                setUsuario(getRemetente());
-                setSenha(stringObjectMap.get("SENHA").toString().trim());
-                setAutentica(stringObjectMap.get("METODO").toString().trim().equals("TLS"));
+            setPorta(model.getPorta().trim().replace(".0", ""));
+            if ((getServidor().toLowerCase().contains("gmail")
+                    || getServidor().toLowerCase().contains("lauxen"))
+                    && isUsaSSL()) {
+                setPorta("465");
             }
-
-            logger.info("{} {} / {} | Config. Email: {}", dadosRps.filial(), dadosRps.rps(), dadosRps.serie(), Arrays.toString(list.toArray()));
+            setPortaSegura(getPorta());
+            setRemetente(model.getUsuario().trim());
+            setUsuario(getRemetente());
+            setSenha(model.getSenha().trim());
+            setAutentica(model.getMetodo().trim().equals("TLS"));
+            logger.info("{} {} / {} | Config. Email: {}", dadosRps.filial(), dadosRps.rps(), dadosRps.serie(), model);
         } else {
             logger.error("{} {} / {} | Configuração do servidor de e-mails não localizadas.", dadosRps.filial(), dadosRps.rps(), dadosRps.serie());
             throw new RuntimeException("Configuração do servidor de e-mails não localizadas.");
@@ -94,7 +92,6 @@ public class EnviaEmail extends javax.mail.Authenticator {
         logger.info("{} {} / {} | Assunto: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getAssunto());
         logger.info("{} {} / {} | Para: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getPara());
         logger.info("{} {} / {} | Anexos: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getAnexos());
-//        logger.info("{} {} / {} | Usuario: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getUsuario());
 
         if (!getUsuario().isEmpty()
                 && !getSenha().isEmpty()
@@ -206,8 +203,6 @@ public class EnviaEmail extends javax.mail.Authenticator {
         if (isAutentica()) props.put("mail.smtp.auth", "true");
 
         if (isUsaSSL()) {
-//            if (!getFilial().equals("110101") &&
-//                    !getFilial().equals("120101")) {
             if (Objects.equals(getPorta(), "465")) {
                 props.put("mail.smtp.ssl.enable", "true");
             }
