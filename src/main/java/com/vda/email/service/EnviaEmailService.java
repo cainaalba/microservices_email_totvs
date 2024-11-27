@@ -1,20 +1,19 @@
 package com.vda.email.service;
 
-import com.vda.email.dto.DadosEmail;
+import com.vda.email.dto.DadosEmailDto;
 import com.vda.email.component.EnviaEmail;
+import com.vda.email.exceptionhandler.ValidacaoException;
 import com.vda.email.repo.SF2Repo;
 import com.vda.email.repo.SPED051Repo;
-import com.vda.email.uteis.Uteis;
 import com.vda.email.uteis.UteisLayoutHtml;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
+import javax.mail.MessagingException;
+import java.io.IOException;
 
 @Service
-public class EnviaEmailRpsNfseService {
+public class EnviaEmailService {
     @Autowired
     private final EnviaEmail enviaEmail;
 
@@ -24,31 +23,29 @@ public class EnviaEmailRpsNfseService {
     @Autowired
     private final SPED051Repo repoSped051;
 
-    public EnviaEmailRpsNfseService(EnviaEmail enviaEmail,
-                                    SF2Repo repoSf2,
-                                    SPED051Repo repoSped051) {
+    public EnviaEmailService(EnviaEmail enviaEmail,
+                             SF2Repo repoSf2,
+                             SPED051Repo repoSped051) {
         this.enviaEmail = enviaEmail;
         this.repoSf2 = repoSf2;
         this.repoSped051 = repoSped051;
     }
 
-    public ResponseEntity<?> enviarRpsNfse(DadosEmail dados) {
+    public void enviarRpsNfse(DadosEmailDto dados) {
         try {
-            String html = UteisLayoutHtml.montaHtmlNfse(dados.getDadosRps());
-            enviaEmail.send(dados, html);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            String html = UteisLayoutHtml.montaHtmlNfse(dados.getInformacoesDto());
+            enviaEmail.send(dados, html, true);
+        } catch (MessagingException | IOException e) {
+            throw new ValidacaoException(e.getLocalizedMessage());
         }
 
-        if (!dados.getDadosRps().isCanc()) {
+        if (!dados.getInformacoesDto().isCanc()) {
             //PUT F2_ZENVRPS;
             atualizarSf2(dados.getRecnoF2(), dados.getPara());
 
             //PUT SPED12;
             atualizarSped051(dados.getRecno051(), dados.getPara());
         }
-
-        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     private void atualizarSf2(String recno, String[] para) {

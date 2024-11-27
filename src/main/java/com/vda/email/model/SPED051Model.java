@@ -7,11 +7,11 @@ import lombok.NoArgsConstructor;
 
 import java.util.Arrays;
 
-@Entity(name = "051Model")
+@Entity
+@Table(name = "SPED051", schema = "dbo", catalog = "Sped12")
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "SPED051", schema = "dbo", catalog = "Sped12")
 public class SPED051Model {
     @Id
     @Column(name = "R_E_C_N_O_")

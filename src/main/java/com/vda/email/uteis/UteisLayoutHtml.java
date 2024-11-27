@@ -1,6 +1,6 @@
 package com.vda.email.uteis;
 
-import com.vda.email.dto.DadosRps;
+import com.vda.email.dto.InformacoesDto;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -9,9 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class UteisLayoutHtml {
-    public static String montaHtmlNfse(DadosRps dadosRps) throws IOException {
+    public static String montaHtmlNfse(InformacoesDto informacoesDto) throws IOException {
         String htmlContent = lerArquivoHtml("vcknfse.htm");
-        return personalizarLayoutNfse(htmlContent, dadosRps);
+        return personalizarLayoutNfse(htmlContent, informacoesDto);
     }
 
     private static String lerArquivoHtml(String nomeArquivo) throws IOException {
@@ -20,16 +20,16 @@ public class UteisLayoutHtml {
         return new String(fileBytes, StandardCharsets.ISO_8859_1);
     }
 
-    private static String personalizarLayoutNfse(String htmlContent, DadosRps dadosRps) {
+    private static String personalizarLayoutNfse(String htmlContent, InformacoesDto informacoesDto) {
         return htmlContent
-                .replace("%cSerie%", dadosRps.serie())
-                .replace("%cNumDoc%", dadosRps.rps())
-                .replace("%cNFse%", dadosRps.nfse())
-                .replace("%cCodNfse%", dadosRps.codNfse())
-                .replace("%cRazao%", dadosRps.nomeCli())
-                .replace("%cCnpj%", dadosRps.docCli())
-                .replace("%cNmEmp%", dadosRps.nomeFilial())
-                .replace("%motivo%", dadosRps.motivo())
-                .replace("%cMsgAdic%", dadosRps.msgAdic());
+                .replace("%cSerie%", informacoesDto.serie())
+                .replace("%cNumDoc%", informacoesDto.rps())
+                .replace("%cNFse%", informacoesDto.nfse())
+                .replace("%cCodNfse%", informacoesDto.codNfse())
+                .replace("%cRazao%", informacoesDto.nomeCli())
+                .replace("%cCnpj%", informacoesDto.docCli())
+                .replace("%cNmEmp%", informacoesDto.nomeFilial())
+                .replace("%motivo%", informacoesDto.motivo())
+                .replace("%cMsgAdic%", informacoesDto.msgAdic());
     }
 }

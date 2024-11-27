@@ -1,7 +1,7 @@
 package com.vda.email.component;
 
-import com.vda.email.dto.DadosEmail;
-import com.vda.email.dto.DadosRps;
+import com.vda.email.dto.DadosEmailDto;
+import com.vda.email.dto.InformacoesDto;
 import com.vda.email.model.ContasEmailModel;
 import com.vda.email.service.ConfigEmailService;
 import com.vda.email.uteis.Uteis;
@@ -54,12 +54,12 @@ public class EnviaEmail extends javax.mail.Authenticator {
         this.configEmailService = configEmailService;
     }
 
-    public void setDadosEmail(DadosRps dadosRps) {
-        logger.info("{} {} / {} | Dados requisicao: {}", dadosRps.filial(), dadosRps.rps(), dadosRps.serie(), dadosRps);
+    private void configuracoesContaEmail(InformacoesDto informacoesDto) {
+        logger.info("{} {} / {} | Dados requisicao: {}", informacoesDto.filial(), informacoesDto.rps(), informacoesDto.serie(), informacoesDto);
 
-        setFilial(dadosRps.filial());
+        setFilial(informacoesDto.filial());
 
-        ContasEmailModel model = configEmailService.buscaConfigEmail(dadosRps.filial());
+        ContasEmailModel model = configEmailService.buscaConfigEmail(getFilial());
         if (!model.getUsuario().isEmpty()) {
             setServidor(model.getServidor().trim());
             setUsaSSL(getFilial().contains("1101")
@@ -76,22 +76,22 @@ public class EnviaEmail extends javax.mail.Authenticator {
             setUsuario(getRemetente());
             setSenha(model.getSenha().trim());
             setAutentica(model.getMetodo().trim().equals("TLS"));
-            logger.info("{} {} / {} | Config. Email: {}", dadosRps.filial(), dadosRps.rps(), dadosRps.serie(), model);
+            logger.info("{} {} / {} | Config. Email: {}", informacoesDto.filial(), informacoesDto.rps(), informacoesDto.serie(), model);
         } else {
-            logger.error("{} {} / {} | Configuração do servidor de e-mails não localizadas.", dadosRps.filial(), dadosRps.rps(), dadosRps.serie());
+            logger.error("{} {} / {} | Configuração do servidor de e-mails não localizadas.", informacoesDto.filial(), informacoesDto.rps(), informacoesDto.serie());
             throw new RuntimeException("Configuração do servidor de e-mails não localizadas.");
         }
     }
 
-    public void send(DadosEmail dados, String html) throws Exception {
-        setDadosEmail(dados.getDadosRps());
+    public void send(DadosEmailDto dados, String html, boolean enviaRps) throws MessagingException, IOException {
+        configuracoesContaEmail(dados.getInformacoesDto());
         setAssunto(dados.getAssunto());
         setPara(dados.getPara());
         setCorpoEmail(html);
 
-        logger.info("{} {} / {} | Assunto: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getAssunto());
-        logger.info("{} {} / {} | Para: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getPara());
-        logger.info("{} {} / {} | Anexos: {}", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie(), dados.getAnexos());
+        logger.info("{} {} / {} | Assunto: {}", dados.getInformacoesDto().filial(), dados.getInformacoesDto().rps(), dados.getInformacoesDto().serie(), dados.getAssunto());
+        logger.info("{} {} / {} | Para: {}", dados.getInformacoesDto().filial(), dados.getInformacoesDto().rps(), dados.getInformacoesDto().serie(), dados.getPara());
+        logger.info("{} {} / {} | Anexos: {}", dados.getInformacoesDto().filial(), dados.getInformacoesDto().rps(), dados.getInformacoesDto().serie(), dados.getAnexos());
 
         if (!getUsuario().isEmpty()
                 && !getSenha().isEmpty()
@@ -102,11 +102,7 @@ public class EnviaEmail extends javax.mail.Authenticator {
             CommandMap.setDefaultCommandMap(mc);
             MimeMultipart multipart = new MimeMultipart();
 
-            Session session = Session.getInstance(setProperties(), new javax.mail.Authenticator() {
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(getRemetente(), getSenha());
-                }
-            });
+            Session session = getSession();
             session.setDebug(isDebug());
 
             MimeMessage message = new MimeMessage(session);
@@ -139,48 +135,64 @@ public class EnviaEmail extends javax.mail.Authenticator {
                 }
             }
 
-            if (messageBodyFiles == null) {
-                logger.error("{} {} / {} | Nenhum anexo encontrado para enviar!", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie());
+            if (messageBodyFiles == null && enviaRps) {
+                logger.error("{} {} / {} | Nenhum anexo encontrado para enviar!", dados.getInformacoesDto().filial(), dados.getInformacoesDto().rps(), dados.getInformacoesDto().serie());
                 throw new IOException("Nenhum anexo encontrado para enviar!");
             }
 
-            // corpo da mensagem
-            BodyPart messageBodyPart = new MimeBodyPart();
-            messageBodyPart.setText(getCorpoEmail());
-            if (isHtml()) {
-                messageBodyPart.setHeader("lang", "pt-br");
-                messageBodyPart.setHeader("charset", "UTF-8");
-                messageBodyPart.setHeader("content-type", "text/html");
-            }
+            BodyPart messageBodyPart = getBodyPart();
             multipart.addBodyPart(messageBodyPart);
 
             message.setContent(multipart);
             session.getTransport("smtp");
 
-            //TRATA DO ENVIO PARA CADA DESTINATÁRIO EXCLUSIVAMENTE
+            processaEnvio(message);
+
+            multipart.removeBodyPart(messageBodyPart);
+            if (messageBodyFiles != null) {
+                multipart.removeBodyPart(messageBodyFiles);
+            }
+            logger.info("{} {} / {} | Envio finalizado com sucesso!", dados.getInformacoesDto().filial(), dados.getInformacoesDto().rps(), dados.getInformacoesDto().serie());
+        } else {
+            throw new RuntimeException("Usuário, senha, remetente ou assunto inválidos. Tente novamente!");
+        }
+    }
+
+    private void processaEnvio(MimeMessage message) {
+        //TRATA DO ENVIO PARA CADA DESTINATÁRIO EXCLUSIVAMENTE
+        try {
             Address[] addressTo = new InternetAddress[1];
             for (int i = 0; i < getPara().length; i++) {
                 addressTo[0] = new InternetAddress(getPara()[i]);
                 message.setRecipients(MimeMessage.RecipientType.TO, addressTo);
-                try {
-                    Transport.send(message);
-                } catch (SendFailedException e) {
-                    Address[] invalidAddressTo = e.getValidUnsentAddresses();
-                    StringBuilder stringBuilder = new StringBuilder();
-                    for (Address invalid : invalidAddressTo) {
-                        stringBuilder.append(invalid.toString()).append("; ");
-                    }
-                    logger.error("Endereço de e-mail ou domínio inválido: {} - {}", stringBuilder, e.getNextException().toString());
-                }
+                Transport.send(message);
+                logger.info("Envio finalizado com sucesso para {}", getPara()[i]);
             }
-
-            multipart.removeBodyPart(messageBodyPart);
-            multipart.removeBodyPart(messageBodyFiles);
-
-            logger.info("{} {} / {} | Envio finalizado com sucesso!", dados.getDadosRps().filial(), dados.getDadosRps().rps(), dados.getDadosRps().serie());
-        } else {
-            throw new RuntimeException("Usuário, senha, remetente ou assunto inválidos. Tente novamente!");
+        } catch (AuthenticationFailedException e) {
+            throw new RuntimeException(e);
+        } catch (MessagingException e) {
+            logger.error("Endereço de e-mail ou domínio inválido: {} ", e.getMessage());
         }
+    }
+
+    private BodyPart getBodyPart() throws MessagingException {
+        // corpo da mensagem
+        BodyPart messageBodyPart = new MimeBodyPart();
+        messageBodyPart.setText(getCorpoEmail());
+        if (isHtml()) {
+            messageBodyPart.setHeader("lang", "pt-br");
+            messageBodyPart.setHeader("charset", "UTF-8");
+            messageBodyPart.setHeader("content-type", "text/html");
+        }
+        return messageBodyPart;
+    }
+
+    private Session getSession() {
+        return Session.getInstance(setProperties(), new Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(getRemetente(), getSenha());
+            }
+        });
     }
 
     private static MailcapCommandMap getMailcapCommandMap() {

@@ -12,10 +12,10 @@ import java.util.Arrays;
 import java.util.Date;
 
 @Entity
+@Table(name = "SF2010")
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "SF2010")
 public class SF2Model {
     @Id
     @Column(name = "R_E_C_N_O_")

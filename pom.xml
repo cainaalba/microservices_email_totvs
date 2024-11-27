@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.vda</groupId>
     <artifactId>apiemail</artifactId>
-    <version>1.0</version>
+    <version>2.0</version>
     <name>apiemail</name>
     <description>Projeto para envio dos e-mail</description>
     <properties>
@@ -20,10 +20,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
