@@ -15,6 +15,6 @@ public class ConfigEmailService {
     }
 
     public ContasEmailModel buscaConfigEmail(String filial) {
-        return contasEmailRepo.findAllByFilial(filial.substring(0,4));
+        return contasEmailRepo.findAllByFilial(filial.substring(0, 4));
     }
 }

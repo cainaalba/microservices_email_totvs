@@ -48,6 +48,14 @@ public class EnviaEmailService {
         }
     }
 
+    public void enviaEmail(DadosEmailDto dados) {
+        try {
+            enviaEmail.send(dados, dados.getCorpo(), false);
+        } catch (MessagingException | IOException | RuntimeException e) {
+            throw new ValidacaoException(e.getLocalizedMessage());
+        }
+    }
+
     private void atualizarSf2(String recno, String[] para) {
         var doc = repoSf2.getReferenceById(recno);
         doc.atualizaStatusMail(recno, "JOB Email", para);

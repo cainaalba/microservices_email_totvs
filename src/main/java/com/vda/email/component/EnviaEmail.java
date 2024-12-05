@@ -2,6 +2,7 @@ package com.vda.email.component;
 
 import com.vda.email.dto.DadosEmailDto;
 import com.vda.email.dto.InformacoesDto;
+import com.vda.email.exceptionhandler.ValidacaoException;
 import com.vda.email.model.ContasEmailModel;
 import com.vda.email.service.ConfigEmailService;
 import com.vda.email.uteis.Uteis;
@@ -60,6 +61,11 @@ public class EnviaEmail extends javax.mail.Authenticator {
         setFilial(informacoesDto.filial());
 
         ContasEmailModel model = configEmailService.buscaConfigEmail(getFilial());
+        if (model == null) {
+            logger.error("{} {} / {} | Configuração do servidor de e-mails não localizadas.", informacoesDto.filial(), informacoesDto.rps(), informacoesDto.serie());
+            throw new RuntimeException("Configuração do servidor de e-mails não localizadas.");
+        }
+
         if (!model.getUsuario().isEmpty()) {
             setServidor(model.getServidor().trim());
             setUsaSSL(getFilial().contains("1101")
@@ -77,9 +83,6 @@ public class EnviaEmail extends javax.mail.Authenticator {
             setSenha(model.getSenha().trim());
             setAutentica(model.getMetodo().trim().equals("TLS"));
             logger.info("{} {} / {} | Config. Email: {}", informacoesDto.filial(), informacoesDto.rps(), informacoesDto.serie(), model);
-        } else {
-            logger.error("{} {} / {} | Configuração do servidor de e-mails não localizadas.", informacoesDto.filial(), informacoesDto.rps(), informacoesDto.serie());
-            throw new RuntimeException("Configuração do servidor de e-mails não localizadas.");
         }
     }
 
@@ -169,7 +172,7 @@ public class EnviaEmail extends javax.mail.Authenticator {
                 logger.info("Envio finalizado com sucesso para {}", getPara()[i]);
             }
         } catch (AuthenticationFailedException e) {
-            throw new RuntimeException(e);
+            throw new ValidacaoException(e.getMessage());
         } catch (MessagingException e) {
             logger.error("Endereço de e-mail ou domínio inválido: {} ", e.getMessage());
         }

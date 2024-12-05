@@ -19,4 +19,5 @@ public class DadosEmailDto {
     private String[] anexos;
     private String recnoF2;
     private String recno051;
+    private String corpo;
 }

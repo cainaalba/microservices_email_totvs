@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping
 public class EnviaEmailController {
 
     @Autowired
@@ -27,7 +26,13 @@ public class EnviaEmailController {
     }
 
     @PostMapping("/enviar")
-    private ResponseEntity<?> enviar(@RequestBody DadosEmailDto dados) {
-        return ResponseEntity.status(HttpStatus.OK).build();
+    public ResponseEntity<?> enviar(@RequestBody DadosEmailDto dados) {
+        try {
+            service.enviaEmail(dados);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+
     }
 }
