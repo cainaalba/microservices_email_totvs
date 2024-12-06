@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.vda</groupId>
     <artifactId>apiemail</artifactId>
-    <version>2.0</version>
+    <version>3.0</version>
     <name>apiemail</name>
     <description>Projeto para envio dos e-mail</description>
     <properties>
