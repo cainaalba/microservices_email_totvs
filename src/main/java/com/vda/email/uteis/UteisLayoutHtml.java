@@ -1,6 +1,7 @@
 package com.vda.email.uteis;
 
 import com.vda.email.dto.InformacoesDto;
+import com.vda.email.exceptionhandler.ValidacaoException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +12,11 @@ import java.nio.file.Paths;
 public class UteisLayoutHtml {
     public static String montaHtmlNfse(InformacoesDto informacoesDto) throws IOException {
         String htmlContent = lerArquivoHtml("vcknfse.htm");
+
+        if (informacoesDto == null) {
+            throw new ValidacaoException("Informações do documento não localizadas!");
+        }
+
         return personalizarLayoutNfse(htmlContent, informacoesDto);
     }
 

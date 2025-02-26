@@ -1,5 +1,6 @@
 package com.vda.email.component;
 
+import com.sun.mail.smtp.SMTPAddressFailedException;
 import com.vda.email.dto.DadosEmailDto;
 import com.vda.email.dto.InformacoesDto;
 import com.vda.email.exceptionhandler.ValidacaoException;
@@ -68,8 +69,13 @@ public class EnviaEmail extends javax.mail.Authenticator {
 
         if (!model.getUsuario().isEmpty()) {
             setServidor(model.getServidor().trim());
-            setUsaSSL(getFilial().contains("1101")
-                    || model.getMetodo().trim().equals("TLS"));
+
+            if (model.getServidor().contains("smtp2go")) {
+                setUsaSSL(false);
+            } else {
+                setUsaSSL(getFilial().contains("1101")
+                        || model.getMetodo().trim().equals("TLS"));
+            }
 
             setPorta(model.getPorta().trim().replace(".0", ""));
             if ((getServidor().toLowerCase().contains("gmail")
@@ -81,7 +87,8 @@ public class EnviaEmail extends javax.mail.Authenticator {
             setRemetente(model.getUsuario().trim());
             setUsuario(getRemetente());
             setSenha(model.getSenha().trim());
-            setAutentica(model.getMetodo().trim().equals("TLS"));
+            setAutentica(model.getMetodo().trim().equals("TLS") ||
+                    model.getServidor().contains("smtp2go"));
             logger.info("{} {} / {} | Config. Email: {}", informacoesDto.filial(), informacoesDto.rps(), informacoesDto.serie(), model);
         }
     }
@@ -155,7 +162,7 @@ public class EnviaEmail extends javax.mail.Authenticator {
             if (messageBodyFiles != null) {
                 multipart.removeBodyPart(messageBodyFiles);
             }
-            logger.info("{} {} / {} | Envio finalizado com sucesso!", dados.getInformacoesDto().filial(), dados.getInformacoesDto().rps(), dados.getInformacoesDto().serie());
+            logger.info("{} {} / {} | Envio finalizado", dados.getInformacoesDto().filial(), dados.getInformacoesDto().rps(), dados.getInformacoesDto().serie());
         } else {
             throw new RuntimeException("Usuário, senha, remetente ou assunto inválidos. Tente novamente!");
         }
@@ -173,6 +180,10 @@ public class EnviaEmail extends javax.mail.Authenticator {
             }
         } catch (AuthenticationFailedException e) {
             throw new ValidacaoException(e.getMessage());
+        } catch (SMTPAddressFailedException e) {
+            logger.error("Erro de SMTP: {} ", e.getMessage());
+        } catch (SendFailedException e) {
+            logger.error("Erro ao enviar {} ", e.getNextException().getMessage());
         } catch (MessagingException e) {
             logger.error("Endereço de e-mail ou domínio inválido: {} ", e.getMessage());
         }
