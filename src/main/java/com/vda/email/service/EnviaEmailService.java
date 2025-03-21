@@ -1,13 +1,16 @@
 package com.vda.email.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vda.email.dto.DadosEmailDto;
 import com.vda.email.component.EnviaEmail;
+import com.vda.email.dto.EmailColetaDto;
 import com.vda.email.exceptionhandler.ValidacaoException;
 import com.vda.email.repo.SF2Repo;
 import com.vda.email.repo.SPED051Repo;
 import com.vda.email.uteis.UteisLayoutHtml;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.mail.MessagingException;
 import java.io.IOException;
@@ -64,5 +67,15 @@ public class EnviaEmailService {
     private void atualizarSped051(String recno, String[] para) {
         var doc = repoSped051.getReferenceById(recno);
         doc.atualizaStatusMail(para);
+    }
+
+    public void enviaEmailColeta(String dados, MultipartFile arquivo) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            var emailDto = objectMapper.readValue(dados, EmailColetaDto.class);
+            enviaEmail.enviaColeta(emailDto, arquivo);
+        } catch (MessagingException | IOException | RuntimeException e) {
+            throw new ValidacaoException(e.getLocalizedMessage());
+        }
     }
 }

@@ -13,4 +13,8 @@ public record InformacoesDto(String filial,
                              String msgAdic,
                              String motivo,
                              boolean isCanc) {
+
+    public InformacoesDto(String filial) {
+        this(filial, "", "", "", "", "", "", "", "", "", "", "", false);
+    }
 }

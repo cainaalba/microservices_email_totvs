@@ -2,6 +2,7 @@ package com.vda.email.component;
 
 import com.sun.mail.smtp.SMTPAddressFailedException;
 import com.vda.email.dto.DadosEmailDto;
+import com.vda.email.dto.EmailColetaDto;
 import com.vda.email.dto.InformacoesDto;
 import com.vda.email.exceptionhandler.ValidacaoException;
 import com.vda.email.model.ContasEmailModel;
@@ -13,13 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.activation.*;
 import javax.mail.*;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
+import javax.mail.internet.*;
+import javax.mail.util.ByteArrayDataSource;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -179,13 +179,17 @@ public class EnviaEmail extends javax.mail.Authenticator {
                 logger.info("Envio finalizado com sucesso para {}", getPara()[i]);
             }
         } catch (AuthenticationFailedException e) {
-            throw new ValidacaoException(e.getMessage());
+            logger.error("Falha de autenticação no servidor de e-mails. Entre em contato com o provedor de e-mails! {}", e.getMessage());
+            throw new ValidacaoException("Falha de autenticação no servidor de e-mails. Entre em contato com o provedor de e-mails! " + e.getMessage());
         } catch (SMTPAddressFailedException e) {
             logger.error("Erro de SMTP: {} ", e.getMessage());
+            throw new ValidacaoException("Erro de SMTP: " + e.getMessage());
         } catch (SendFailedException e) {
             logger.error("Erro ao enviar {} ", e.getNextException().getMessage());
+            throw new ValidacaoException("Erro ao enviar: " + e.getMessage());
         } catch (MessagingException e) {
             logger.error("Endereço de e-mail ou domínio inválido: {} ", e.getMessage());
+            throw new ValidacaoException("Endereço de e-mail ou domínio inválido: " + e.getMessage());
         }
     }
 
@@ -236,5 +240,55 @@ public class EnviaEmail extends javax.mail.Authenticator {
             props.put("mail.smtp.ssl.protocols", "TLSv1.2");
         }
         return props;
+    }
+
+    public void enviaColeta(EmailColetaDto dados, MultipartFile arquivo) throws MessagingException, IOException {
+        configuracoesContaEmail(new InformacoesDto(dados.getFilial()));
+        setAssunto(dados.getAssunto());
+        setPara(dados.getPara());
+        setCorpoEmail(dados.getCorpo());
+
+        if (!getUsuario().isEmpty()
+                && !getSenha().isEmpty()
+                && getPara().length > 0
+                && !getRemetente().isEmpty()
+                && !getAssunto().isEmpty()) {
+            MailcapCommandMap mc = getMailcapCommandMap();
+            CommandMap.setDefaultCommandMap(mc);
+            MimeMultipart multipart = new MimeMultipart();
+
+            Session session = getSession();
+            session.setDebug(isDebug());
+
+            MimeMessage message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(getRemetente()));
+
+            message.setSubject(getAssunto());
+            message.setSentDate(new Date());
+
+            if (arquivo == null) {
+                throw new IOException("Nenhum anexo encontrado para enviar!");
+            }
+
+            DataSource source = new ByteArrayDataSource(arquivo.getBytes(), arquivo.getContentType());
+            MimeBodyPart messageBodyFiles = new MimeBodyPart();
+            messageBodyFiles.setDataHandler(new DataHandler(source));
+            messageBodyFiles.setFileName(arquivo.getOriginalFilename());
+            multipart.addBodyPart(messageBodyFiles);
+
+            BodyPart messageBodyPart = getBodyPart();
+            multipart.addBodyPart(messageBodyPart);
+
+            message.setContent(multipart);
+            session.getTransport("smtp");
+
+            processaEnvio(message);
+
+            multipart.removeBodyPart(messageBodyPart);
+            multipart.removeBodyPart(messageBodyFiles);
+            logger.info("Envio da coleta/orcamento {} finalizado!", dados.getNumeroColetaEOrcamento());
+        } else {
+            throw new RuntimeException("Usuario, senha, remetente ou assunto invalidos. Tente novamente!");
+        }
     }
 }
